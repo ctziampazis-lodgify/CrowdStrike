@@ -170,7 +170,7 @@ class SlackIntergationClass:
                 elif command == "block":
                     # DONE take the rest part of the command and check if its valid and we got what we expected
                     print("Sending Results to Slack...")
-                    #self.custom_IOA.simple_regex_list(formatted_msg, command)
+                    self.custom_IOA.simple_regex_list(formatted_msg, command)
                     print("Blocking Rule Created for: " + str(formatted_msg))
                     self.LOGGER.get_message_logger().info(
                         f"Blocking Rule Created for: " + str(formatted_msg))
