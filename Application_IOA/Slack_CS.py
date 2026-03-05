@@ -1,16 +1,12 @@
-import hashlib
-import json
-import ssl
-from uu import encode
-import Custom_IOA
-import certifi
-from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+
+import Custom_IOA
+from slack_sdk import WebClient
 from Discovery import *
 from App_Details_Processing import *
 from Custom_IOA import *
 from CONFIG import *
-from Application_IOA.Logging_file import Logging_Class as logger, Logging_Class
+from Logging_file import Logging_Class as logger, Logging_Class
 
 class SlackIntergationClass:
 
@@ -171,10 +167,10 @@ class SlackIntergationClass:
                     # DONE take the rest part of the command and check if its valid and we got what we expected
                     print("Sending Results to Slack...")
                     self.custom_IOA.simple_regex_list(formatted_msg, command)
-                    print("Blocking Rule Created for: " + str(formatted_msg))
+                    print("Block Rule Created for: " + str(formatted_msg))
                     self.LOGGER.get_message_logger().info(
-                        f"Blocking Rule Created for: " + str(formatted_msg))
-                    self.sending_alert("Blocking Rule Created for: " + str(formatted_msg))
+                        f"Block Rule Created for: " + str(formatted_msg))
+                    self.sending_alert("Block Rule Created for: " + str(formatted_msg))
 
                 elif command == "detect":
                     # DONE take the rest part of the command and check if its valid and we got what we expected
@@ -184,6 +180,15 @@ class SlackIntergationClass:
                     self.LOGGER.get_message_logger().info(
                         f"Detect Rule Created for: " + str(formatted_msg))
                     self.sending_alert("Detect Rule Created for: " + str(formatted_msg))
+
+                elif command == "monitor":
+                    # DONE take the rest part of the command and check if its valid and we got what we expected
+                    print("Sending Results to Slack...")
+                    self.custom_IOA.simple_regex_list(formatted_msg,command)
+                    print("Monitor Rule Created for: " + str(formatted_msg))
+                    self.LOGGER.get_message_logger().info(
+                        f"Monitor Rule Created for: " + str(formatted_msg))
+                    self.sending_alert("Monitor Rule Created for: " + str(formatted_msg))
             else:
                 print("Command not found: " + formatted_msg)
                 self.LOGGER.get_message_logger().info(
@@ -225,7 +230,6 @@ class SlackIntergationClass:
 
             if result is not None:
                 messages = result.data.get("messages")
-                self.LOGGER.get_message_logger().info(f"retrieve_last_message - retrieved last message!\n{messages}")
 
                 if messages is not None:
                     actor_bot = messages[0].get("bot_id")
@@ -237,6 +241,8 @@ class SlackIntergationClass:
                         user = str(result.data.get("messages")[0].get("user"))
                         if user in self.authorized_users:
                             self.LOGGER.get_message_logger().info(f"Authorized User : {user}")
+                            self.LOGGER.get_message_logger().info(
+                                f"retrieve_last_message - retrieved last message!\n{messages}")
                             self.process_message(message)
                         else:
                             self.LOGGER.get_message_logger().warning(f"Unauthorized User : {user} !!!!!")
@@ -250,7 +256,7 @@ class SlackIntergationClass:
                             # print(str(result.data.get("messages")[0].get("attachments")[0].get("author_name")))
                             # message = str(result.data.get("messages")[0].get("text"))
                             # print(str(result.data.get("messages")[0].get("attachments")[0].get("author_name")))
-                            self.LOGGER.get_message_logger().info(f"retrieve_last_message - bot_message detected: {result.data}")
+                            self.LOGGER.get_message_logger().info("retrieve_last_message - bot_message detected: " + str(actor_bot))
 
                             #self.hash_message(message)
                     else:

@@ -1,7 +1,4 @@
 import json
-from traceback import print_tb
-
-from Application_IOA.Logging_file import Logging_Class
 
 class App_Details_Processing:
 
