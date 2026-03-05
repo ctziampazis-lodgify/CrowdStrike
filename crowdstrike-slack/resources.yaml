@@ -1,0 +1,38 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crowdstrike-slack
+  namespace: crowdstrike-slack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crowdstrike-slack
+  template:
+    metadata:
+      labels:
+        app: crowdstrike-slack
+    spec:
+      containers:
+      - name: crowdstrike-slack
+        image: europe-docker.pkg.dev/lodgify-infra/eu.gcr.io/<IMAGE_TO_PUSH>
+        imagePullPolicy: Always
+        env:
+          - name: CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: cs-slack-client-id
+                key: client-id
+          - name: CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: cs-slack-client-secret
+                key: client-secret
+          - name: SLACK_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cs-slack-slack-token
+                key: slack-token
+      imagePullSecrets:
+        - name: kubernetes-image-reader  # creds to pull from europe-docker.pkg.dev/lodgify-infra/eu.gcr.io registry
