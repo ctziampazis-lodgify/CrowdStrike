@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: crowdstrike-slack
-        image: europe-docker.pkg.dev/lodgify-infra/eu.gcr.io/<IMAGE_TO_PUSH>
+        image: europe-docker.pkg.dev/lodgify-infra/eu.gcr.io/csfalconpy
         imagePullPolicy: Always
         env:
           - name: CLIENT_ID
