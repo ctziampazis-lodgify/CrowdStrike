@@ -1,3 +1,4 @@
-slack_token = os.environ['SECRET1']
-client_id = os.environ['SECRET2']
-client_secret = os.environ['SECRET3']
+import os
+slack_token = os.environ['SLACK_TOKEN']
+client_id = os.environ['CLIENT_ID']
+client_secret = os.environ['CLIENT_SECRET']
