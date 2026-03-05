@@ -1,0 +1,10 @@
+pip~=25.1.1
+wheel~=0.45.1
+certifi~=2026.1.4
+urllib3~=2.6.3
+requests~=2.32.5
+idna~=3.11
+charset-normalizer~=3.4.4
+setuptools~=80.3.1
+crowdstrike-falconpy~=1.6.0
+slack-sdk~=3.40.0
