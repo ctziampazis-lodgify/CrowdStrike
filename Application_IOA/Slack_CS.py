@@ -91,7 +91,7 @@ class SlackIntergationClass:
 
         self.LOGGER.get_message_logger().info("format_message - message to be formatted!")
 
-        allowed_commands = ["block", "search", "detect"]
+        allowed_commands = ["block_enable", "block", "search", "detect_enable", "detect", "monitor", "monitor_enable"]
         app_list = []
 
         list_of_msg_part = message.split("\n")
@@ -127,12 +127,12 @@ class SlackIntergationClass:
                 search
                 steam
             For Block
-                block
+                block_enable
                 app1.app
                 app2.app
                 app3.exe
             For Detect
-                detect
+                detect_enable
                 app1.app
 
         :param message:
@@ -163,28 +163,49 @@ class SlackIntergationClass:
                         f"Apps found: \n\tMac:" + str(res[0]) + "\n\tWin" + str(res[1]))
                     self.sending_alert("Apps found: \n\tMac:" + str(res[0]) + "\n\tWin" + str(res[1]))
 
-                elif command == "block":
+                elif command == "block" or command == "block_enable":
                     # DONE take the rest part of the command and check if its valid and we got what we expected
                     print("Sending Results to Slack...")
-                    self.custom_IOA.simple_regex_list(formatted_msg, command)
+                    if command == "block_enable":
+                        self.LOGGER.get_message_logger().info(
+                            f"Detect command block_enable!!! ")
+                        self.custom_IOA.simple_regex_list(formatted_msg, command, "enable")
+                    elif command == "block":
+                        self.LOGGER.get_message_logger().info(
+                            f"Detect command block!!! ")
+                        self.custom_IOA.simple_regex_list(formatted_msg, command, "disable")
                     print("Block Rule Created for: " + str(formatted_msg))
                     self.LOGGER.get_message_logger().info(
                         f"Block Rule Created for: " + str(formatted_msg))
                     self.sending_alert("Block Rule Created for: " + str(formatted_msg))
 
-                elif command == "detect":
+                elif command == "detect" or command == "detect_enable":
                     # DONE take the rest part of the command and check if its valid and we got what we expected
                     print("Sending Results to Slack...")
-                    self.custom_IOA.simple_regex_list(formatted_msg,command)
+                    if command == "detect_enable":
+                        self.LOGGER.get_message_logger().info(
+                            f"Detect command detect_enable!!! ")
+                        self.custom_IOA.simple_regex_list(formatted_msg, command, "enable")
+                    elif command == "detect":
+                        self.LOGGER.get_message_logger().info(
+                            f"Detect command detect!!! ")
+                        self.custom_IOA.simple_regex_list(formatted_msg, command, "disable")
                     print("Detect Rule Created for: " + str(formatted_msg))
                     self.LOGGER.get_message_logger().info(
                         f"Detect Rule Created for: " + str(formatted_msg))
                     self.sending_alert("Detect Rule Created for: " + str(formatted_msg))
 
-                elif command == "monitor":
+                elif command == "monitor" or command == "monitor_enable":
                     # DONE take the rest part of the command and check if its valid and we got what we expected
                     print("Sending Results to Slack...")
-                    self.custom_IOA.simple_regex_list(formatted_msg,command)
+                    if command == "monitor_enable":
+                        self.LOGGER.get_message_logger().info(
+                            f"Detect command monitor_enable!!! ")
+                        self.custom_IOA.simple_regex_list(formatted_msg, command, "enable")
+                    elif command == "monitor":
+                        self.LOGGER.get_message_logger().info(
+                            f"Detect command monitor!!! ")
+                        self.custom_IOA.simple_regex_list(formatted_msg, command, "disable")
                     print("Monitor Rule Created for: " + str(formatted_msg))
                     self.LOGGER.get_message_logger().info(
                         f"Monitor Rule Created for: " + str(formatted_msg))

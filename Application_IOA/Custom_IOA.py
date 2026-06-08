@@ -74,7 +74,25 @@ class Custom_IOA:
         except Exception as e:
             self.LOGGER.get_overall_logger().warning(f"Failed at get_rule_groups...{e}")
 
-    def create_custom_rule(self, os_tpye:str, regex_str:str, action:str):
+    def get_group_details(self, rule_group_id):
+        """
+        This will return a dictionary with details about the rule. For now, we only retrieve the group version value!
+        :param rule_group_id:
+        :return:
+        """
+        try:
+            self.LOGGER.get_overall_logger().info(f"Attempting to fetch Custom IOA Group Details!...")
+            response = self.falcon_customIOA.get_rule_groups(ids=rule_group_id)
+            get_group_version = response.get("body").get("resources")[0].get("version")
+            # print(json.dumps(get_group_version, indent=4))
+            # print(json.dumps(response, indent=4))
+            return int(get_group_version)
+        except Exception as e:
+            self.LOGGER.get_overall_logger().warning(f"Failed at get_group_details...{e}")
+            raise Exception(f"Failed at get_group_details...{e}")
+
+
+    def create_custom_rule(self, os_tpye:str, regex_str:str, action:str, enablement_value):
         # Create a RULE Group
         # MAYBE JUST CREATE GROUPS MANUALLY SO THAT WE ARE CERTAIN FOR THE PREVENTION POLICIES SET
 
@@ -144,12 +162,12 @@ class Custom_IOA:
                     ]
             }
 
-            response = self.falcon_customIOA.create_rule(comment="Testing Rule on Test Group",
+            response = self.falcon_customIOA.create_rule(comment="Pushing Rule from Slack_Integration", #Comment is an optional parameter
                                               description="Does not trigger", #Description
                                               disposition_id=disposition_id,
                                               pattern_severity="low",
                                               field_values=field_val,
-                                              name="Test Rule", # RuleName
+                                              name=str(action)+" - "+str(regex_str), # RuleName
                                               rulegroup_id=RULE_GROUP_ID,
                                               ruletype_id=ruletype_id
                                               )
@@ -157,15 +175,66 @@ class Custom_IOA:
             if response["status_code"] == 201:
                     print("Successfully created Custom IOA Rule!")
                     self.LOGGER.get_overall_logger().info(f"Successfully created Custom IOA Rule!...{response}")
+                    if enablement_value == "enable":
+                        print("Enabling Custom IOA Rule...")
+                        self.LOGGER.get_overall_logger().info(f"Custom IOA Rule to be updated!...")
+                        self.update_custom_rule(response)
             else:
                     errors = response["body"].get("errors", [])
-                    #errors = response
                     print(f"Failed to create rule: {errors}")
         except Exception as e:
             self.LOGGER.get_overall_logger().warning(f"Failed at create_custom_rule...{e}")
             raise Exception(f"Failed at create_custom_rule...{e}")
 
-    def simple_regex_list(self, list_of_apps, action:str):
+    def update_custom_rule(self, rule_creation_response):
+        """
+            The method aims to update the custom IOA rule.
+            :param rule_creation_response: create_custom_rule response with all rules details
+            :return: None
+        """
+        try:
+            extract_response_rulegroup_id = rule_creation_response.get("body")["resources"][0]["rulegroup_id"]
+            extract_response_instance_id = rule_creation_response.get("body")["resources"][0]["instance_id"]
+            extract_response_enabled = rule_creation_response.get("body")["resources"][0]["enabled"]
+            extract_response_name = rule_creation_response.get("body")["resources"][0]["name"]
+            extract_response_description = rule_creation_response.get("body")["resources"][0]["description"]
+            extract_response_comment = rule_creation_response.get("body")["resources"][0]["comment"]
+            extract_response_disposition_id = rule_creation_response.get("body")["resources"][0]["disposition_id"]
+            extract_response_pattern_severity = rule_creation_response.get("body")["resources"][0]["pattern_severity"]
+            extract_response_field_values = rule_creation_response.get("body")["resources"][0]["field_values"]
+            extract_response_group_version = self.get_group_details(extract_response_rulegroup_id)
+
+            # self.LOGGER.get_overall_logger().info(f"Printing Values of Custom IOA Rule!...{extract_response_rulegroup_id},{extract_response_instance_id},{extract_response_pattern_severity},{extract_response_enabled},{extract_response_name},{extract_response_description},{extract_response_field_values},{extract_response_disposition_id}")
+
+            if not extract_response_enabled:
+                self.LOGGER.get_overall_logger().info(f"Attempting to update Custom IOA Rule!...")
+
+                rule_update = {
+                    "description": extract_response_description,
+                    "disposition_id": int(extract_response_disposition_id),
+                    "enabled": True,
+                    "field_values": extract_response_field_values,
+                    "instance_id": extract_response_instance_id,
+                    "name": extract_response_name,
+                    "pattern_severity": extract_response_pattern_severity,
+                    "rulegroup_version": int(extract_response_group_version)
+                }
+
+                response_update = self.falcon_customIOA.update_rules(comment=extract_response_comment,
+                                                         rule_updates=rule_update,
+                                                         rulegroup_id=extract_response_rulegroup_id,
+                                                         rulegroup_version=int(extract_response_group_version)
+                                                         )
+                if response_update["status_code"] == 200:
+                    self.LOGGER.get_overall_logger().info(f"Successfully updated Custom IOA Rule!...{response_update}")
+                else:
+                    errors = response_update["body"].get("errors", [])
+                    print(f"Failed to create rule: {errors}")
+        except Exception as e:
+            self.LOGGER.get_overall_logger().warning(f"Failed at update_custom_rule...{e}")
+            raise Exception(f"Failed at update_custom_rule...{e}")
+
+    def simple_regex_list(self, list_of_apps, action:str, enablement_value):
         """
         Takes a list of app and checks whether is Mac or Windows and creates a simple regex of the given word
 
@@ -175,6 +244,7 @@ class Custom_IOA:
 
         :param action:
         :param list_of_apps:
+        :param enablement_value:
         :return:
         """
         try:
@@ -191,9 +261,9 @@ class Custom_IOA:
                         regex = ".*" + name + "\." + extension + ".*"
                         print(regex)
                         if ".app" in app:
-                            self.create_custom_rule("Mac", regex, action)
+                            self.create_custom_rule("Mac", regex, action, enablement_value)
                         elif ".exe" in app:
-                            self.create_custom_rule("Win", regex, action)
+                            self.create_custom_rule("Win", regex, action, enablement_value)
                         else:
                             print("Unsupported OS Type: " + app)
                             self.LOGGER.get_overall_logger().warning(f"Failed at init simple_regex_list...{app}")
@@ -211,7 +281,7 @@ class Custom_IOA:
             self.LOGGER.get_overall_logger().warning(f"Failed at init simple_regex_list...{e}")
             raise Exception(f"Failed at simple_regex_list...{e}")
 
-    def complex_regex_list(self, list_of_apps, action:str):
+    def complex_regex_list(self, list_of_apps, action:str, enablement_value):
         """
            Takes a list of app and checks whether is Mac or Windows and creates a bit more complicate regex of the given word
 
@@ -221,6 +291,7 @@ class Custom_IOA:
 
            :param action:
            :param list_of_apps:
+           :param enablement_value:
            :return:
         """
         try:
@@ -235,9 +306,9 @@ class Custom_IOA:
                     regex = ".*" + name + "(\s[a-zA-Z]+(\s\([a-zA-Z]+\))?)?\." + extension + ".*"
                     print(regex)
                     if ".app" in app:
-                        self.create_custom_rule("Mac", regex, action)
+                        self.create_custom_rule("Mac", regex, action, enablement_value)
                     elif ".exe" in app:
-                        self.create_custom_rule("Win", regex, action)
+                        self.create_custom_rule("Win", regex, action, enablement_value)
                 else:
                     name = proc_str[0]
                     regex = ".*" + name + "(\s[a-zA-Z]+(\s\([a-zA-Z]+\))?)?"+".*"
